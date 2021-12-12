@@ -64,15 +64,20 @@ const uploadDraft = async (req, res) => {
 		const csvID = user.csvEmails
 		const csvFiles = gridFS.createModel({bucketName:'csv'});
 		const file = await csvFiles.findById(csvID);
-		const readstream = file.read()
-		readstream.pipe(csv({separator: ';'}))
-			.on('data', function(csvrow) {
-				csvData.push(csvrow);
-			})
-			.on('end',function() {
-				res.status(200).json({mailTo:csvData, textMessage:user.textMessage})
-				return
-			});
+		if (file){
+			const readstream = file.read()
+			readstream.pipe(csv({separator: ';'}))
+				.on('data', function(csvrow) {
+					csvData.push(csvrow);
+				})
+				.on('end',function() {
+					res.status(200).json({mailTo:csvData, textMessage:user.textMessage})
+					return
+				});
+		} else {
+			res.status(200).json({textMessage:user.textMessage})
+		}
+		
 	} catch (e) {
 		res.status(400).json(e)
 		return
@@ -93,10 +98,10 @@ const sendMessage = async (req, res) => {
 		});
 
 		await transporter.sendMail({
-			from: `${user} <omar@gmail.com>`, // sender address
-			to:emails, // list of receivers
-			subject: "Hello ✔", // Subject line
-			text: textMessage, // plain text body
+			from: `${user} <omar@gmail.com>`, 
+			to:emails, 
+			subject: "Hello ✔", 
+			text: textMessage, 
 		}, (err, result) => {
 			console.log(err)
 		});
